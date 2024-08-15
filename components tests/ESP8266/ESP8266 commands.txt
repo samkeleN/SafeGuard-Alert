@@ -1,0 +1,7 @@
+AT 				// To check the connection
+AT+RST 				// To restart it
+AT+GMR 				// To check for its version
+AT+CWLAP 			// To check for local WIFI
+AT+CWJAP="Name","password"	// To connect to the WIFI
+
+Reference video: https://youtu.be/XNtYqP5RMyM?si=zvA98RCeRodwjIfp 
