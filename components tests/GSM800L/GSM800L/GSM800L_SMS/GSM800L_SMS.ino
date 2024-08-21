@@ -1,29 +1,34 @@
-#include <SoftwareSerial.h>
-
-//Create software serial object to communicate with SIM800L
-SoftwareSerial mySerial(3, 2); //SIM800L Tx & Rx is connected to Arduino #3 & #2
+// Use Serial1 instead of SoftwareSerial
 
 void setup()
 {
-  //Begin serial communication with Arduino and Arduino IDE (Serial Monitor)
+  // Begin serial communication with Arduino IDE (Serial Monitor)
   Serial.begin(9600);
   
-  //Begin serial communication with Arduino and SIM800L
-  mySerial.begin(9600);
+  // Begin serial communication with SIM800L using Serial1
+  Serial1.begin(9600);
 
   Serial.println("Initializing..."); 
   delay(1000);
 
-  mySerial.println("AT"); //Once the handshake test is successful, it will back to OK
+  // Send AT command to check connection
+  Serial1.println("AT"); // Once the handshake test is successful, it will return OK
   updateSerial();
 
-  mySerial.println("AT+CMGF=1"); // Configuring TEXT mode
+  // Set SMS mode to TEXT
+  Serial1.println("AT+CMGF=1"); // Configuring TEXT mode
   updateSerial();
- mySerial.println("AT+CMGS=\"+27633274367\"");//change ZZ with country code and xxxxxxxxxxx with phone number to sms
+
+  // Send SMS command with phone number
+  Serial1.println("AT+CMGS=\"+27633274367\""); // Replace ZZ with country code and xxxxxxxxxxx with phone number
   updateSerial();
-  mySerial.print("Samkele is in danger find his location here | https://github.com/samkeleN"); //text content
+
+  // SMS content
+  Serial1.print("Samkele is here! | youtube.com");
   updateSerial();
-  mySerial.write(26);
+
+  // End SMS with Ctrl+Z (ASCII code 26)
+  Serial1.write(26);
 }
 
 void loop()
@@ -33,12 +38,16 @@ void loop()
 void updateSerial()
 {
   delay(500);
+
+  // Forward data from Serial Monitor to Serial1 (SIM800L)
   while (Serial.available()) 
   {
-    mySerial.write(Serial.read());//Forward what Serial received to Software Serial Port
+    Serial1.write(Serial.read()); 
   }
-  while(mySerial.available()) 
+
+  // Forward data from Serial1 (SIM800L) to Serial Monitor
+  while (Serial1.available()) 
   {
-    Serial.write(mySerial.read());//Forward what Software Serial received to Serial Port
+    Serial.write(Serial1.read()); 
   }
 }

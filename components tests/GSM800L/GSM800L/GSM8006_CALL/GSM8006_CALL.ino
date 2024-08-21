@@ -1,26 +1,22 @@
-#include <SoftwareSerial.h>
-
-//Create software serial object to communicate with SIM800L
-SoftwareSerial mySerial(3, 2); //SIM800L Tx & Rx is connected to Arduino #3 & #2
-
+// Use Serial1 instead of SoftwareSerial
 void setup()
 {
-  //Begin serial communication with Arduino and Arduino IDE (Serial Monitor)
+  // Begin serial communication with Arduino IDE (Serial Monitor)
   Serial.begin(9600);
-  
-  //Begin serial communication with Arduino and SIM800L
-  mySerial.begin(9600);
 
-  Serial.println("Initializing..."); 
+  // Begin serial communication with SIM800L using Serial1
+  Serial1.begin(9600);
+
+  Serial1.println("Initializing..."); 
   delay(1000);
 
-  mySerial.println("AT"); //Once the handshake test is successful, i t will back to OK
+  Serial1.println("AT"); // Once the handshake test is successful, it will return OK
   updateSerial();
-  
- mySerial.println("ATD+ +27633274367;"); //  change ZZ with country code and xxxxxxxxxxx with phone number to dial
+
+  Serial1.println("ATD+ +27633274367;"); // Replace ZZ with country code and xxxxxxxxxxx with phone number to dial
   updateSerial();
-  delay(20000); // wait for 20 seconds...
-  mySerial.println("ATH"); //hang up
+  delay(20000); // Wait for 20 seconds...
+  Serial1.println("ATH"); // Hang up
   updateSerial();
 }
 
@@ -33,10 +29,10 @@ void updateSerial()
   delay(500);
   while (Serial.available()) 
   {
-    mySerial.write(Serial.read());//Forward what Serial received to Software Serial Port
+    Serial1.write(Serial.read()); // Forward what Serial received to Serial1
   }
-  while(mySerial.available()) 
+  while (Serial1.available()) 
   {
-    Serial.write(mySerial.read());//Forward what Software Serial received to Serial Port
+    Serial.write(Serial1.read()); // Forward what Serial1 received to Serial
   }
 }
