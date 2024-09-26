@@ -24,7 +24,7 @@ void setup()
   updateSerial();
 
   // SMS content
-  Serial1.print("Samkele is here! | youtube.com");
+  Serial1.print("Samkele needs help! |Here is his location: https://github.com/samkeleN");
   updateSerial();
 
   // End SMS with Ctrl+Z (ASCII code 26)

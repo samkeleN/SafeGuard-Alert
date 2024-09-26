@@ -8,7 +8,7 @@ void setup()
   Serial1.begin(9600);
 
   Serial1.println("Initializing..."); 
-  delay(1000);
+  delay(1000); // 
 
   Serial1.println("AT"); // Once the handshake test is successful, it will return OK
   updateSerial();
