@@ -13,7 +13,7 @@ void setup()
   Serial1.println("AT"); // Once the handshake test is successful, it will return OK
   updateSerial();
 
-  Serial1.println("ATD+ +27633274367;"); // Replace ZZ with country code and xxxxxxxxxxx with phone number to dial
+  Serial1.println("ATD+ +27717927286;"); // Replace ZZ with country code and xxxxxxxxxxx with phone number to dial
   updateSerial();
   delay(20000); // Wait for 20 seconds...
   Serial1.println("ATH"); // Hang up
