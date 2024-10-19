@@ -203,10 +203,10 @@ void readFirebase() {
 
                     // Check for "name" and "contact" keys
                     if (key == "name") {
-                        contactNames[contactCount] = value;
+                        contactNames[contactCount - 1] = value;
                     } else if (key == "contact") {
                         // Convert the contact to a string if needed
-                        contactNumbers[contactCount] = formatContactNumber(value);
+                        contactNumbers[contactCount] = "+27" + value.substring(1);
                         contactCount++; // Increment contact count
                     }
                 }
