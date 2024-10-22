@@ -23,6 +23,7 @@ void setup()
   
   SerialSIM.println("AT+CREG?"); // Check network registration
   updateSerial();
+
 }
 
 void loop()

@@ -20,7 +20,7 @@ void setup()
   updateSerial();
 
   // Send SMS command with phone number
-  Serial1.println("AT+CMGS=\"+27717927286\""); // Replace ZZ with country code and xxxxxxxxxxx with phone number
+  Serial1.println("AT+CMGS=\"+27633274367\""); // Replace ZZ with country code and xxxxxxxxxxx with phone number
   updateSerial();
 
   // SMS content

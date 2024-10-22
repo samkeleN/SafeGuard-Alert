@@ -198,7 +198,7 @@ void loop() {
                 // Display stored contacts from memory
                 for (int i = 0; i < contactCount; i++) {
                     Serial.print("Contact Name: ");
-                    Serial.println(contactNames[i]);
+                    Serial.println(contactNames[i-1]);
                     Serial.print("Contact Number: ");
                     Serial.println(contactNumbers[i]);
                 }
@@ -235,10 +235,10 @@ void readFirebase() {
 
                     // Check for "name" and "contact" keys
                     if (key == "name") {
-                        contactNames[contactCount] = value;
+                        contactNames[contactCount-1] = value;
                     } else if (key == "contact") {
                         // Convert the contact to a string if needed
-                        contactNumbers[contactCount] = formatContactNumber(value);
+                        contactNumbers[contactCount] = "+27" + value.substring(1);
                         contactCount++; // Increment contact count
                     }
                 }

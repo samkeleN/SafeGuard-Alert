@@ -120,7 +120,7 @@ void readFirebase() {
                     if (key == "name") {
                         contactNames[contactCount-1] = value;
                     } else if (key == "contact") {
-                        contactNumbers[contactCount] = "+27" + value.substring(1);  // Format to international number
+                        contactNumbers[contactCount] = "+27" + value.substring(0);  // Format to international number
                         contactCount++;
                     }
                 }
