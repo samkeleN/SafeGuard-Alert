@@ -144,7 +144,7 @@ void readFirebase() {
 // Function to make a call using SIM800L
 void makeCall(String number) {
     Serial1.println("ATD" + number + ";");  // Dial the number
-    delay(10000);  // Let the call last for 10 seconds
+    delay(15000);  // Let the call last for 10 seconds
     Serial1.println("ATH");  // Hang up the call
 }
 

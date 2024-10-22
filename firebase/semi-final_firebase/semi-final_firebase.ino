@@ -10,10 +10,13 @@
 
 #define SerialMon Serial   // Use default USB serial for monitoring
 
+// SIM800L communication uses the built-in TX and RX pins
+#define SIM800_BAUD_RATE 9600
+
 MPU6050 mpu;
 int16_t ax, ay, az;
 int16_t gx, gy, gz;
-int deltx = 0, delty = 0, deltz = 0;
+int deltx = 0, delty = 0, deltz = 0, count = 0;
 int deltgx = 0, deltgy = 0, deltgz = 0;
 int vibration = 0, magnitude = 0;
 int sensitivity = 45, devibrate = 75;
@@ -54,20 +57,17 @@ void Impact();
 void readFirebase();
 void connectWiFi();
 void disconnectWiFi();  // Function to disconnect from Wi-Fi
-
-// Function to format contact number as +27...
-String formatContactNumber(String rawNumber) {
-    if (rawNumber.startsWith("0")) {
-        return "+27" + rawNumber.substring(1);
-    } else {
-        return rawNumber;
-    }
-}
+void makeCall(String number);
+void led_singlePress();
+void led_doublePress();
+void alarm();
 
 void setup() {
     // Serial communication setup
-    SerialMon.begin(115200);
+    SerialMon.begin(9600);
+    Serial1.begin(SIM800_BAUD_RATE);
     Wire.begin();
+    magnitude = 0;
     mpu.initialize();
 
     // Check MPU6050 connection
@@ -80,6 +80,7 @@ void setup() {
     time1 = micros();
     pinMode(3, INPUT_PULLUP);  // Button pin
     pinMode(4, OUTPUT); // Buzzer
+    pinMode(5, INPUT_PULLUP); // False alarm
 
     // Initial Firebase setup
     config.api_key = API_KEY;
@@ -92,12 +93,6 @@ void loop() {
     // Impact detection based on time interval
     if (micros() - time1 > 1999) {
         Impact(); // Call Impact function to calculate and print magnitude
-    }
-
-    // Clear the serial monitor every 500ms
-    static unsigned long lastClearTime = 0;
-    if (millis() - lastClearTime >= 500) {
-        lastClearTime = millis(); // Update last clear time
     }
 
     // Button handling for both single and double press
@@ -155,20 +150,14 @@ void loop() {
             // Check if this is a single press and Wi-Fi is not connected
             if (WiFi.status() != WL_CONNECTED) {
                 // Single press detected, display stored contacts
-                Serial.println("Single press detected! Displaying stored contacts (offline):");
-                digitalWrite(4, HIGH);
-                delay(100);
-                digitalWrite(4, LOW);
-                delay(100);
-                digitalWrite(4, HIGH);
-                delay(100);
-                digitalWrite(4, LOW);
+                SerialMon.println("Single press detected! Displaying stored contacts (offline):");
+                led_singlePress();
                 // Display stored contacts from memory
                 for (int i = 0; i < contactCount; i++) {
-                    Serial.print("Contact Name: ");
-                    Serial.println(contactNames[i]);
-                    Serial.print("Contact Number: ");
-                    Serial.println(contactNumbers[i]);
+                    SerialMon.print("Contact Name: ");
+                    SerialMon.println(contactNames[i]);
+                    SerialMon.print("Contact Number: ");
+                    SerialMon.println(contactNumbers[i]);
                 }
             }
 
@@ -185,13 +174,13 @@ void readFirebase() {
     if (Firebase.ready() && signupOK && (millis() - readDataPrevMillis > 5000 || readDataPrevMillis == 0)) {
         readDataPrevMillis = millis();
         String contactPath = userUID + "/NextOfKin";
-        Serial.println("Attempting to read from path: " + contactPath);
+        SerialMon.println("Attempting to read from path: " + contactPath);
 
         if (Firebase.RTDB.get(&fbdo, contactPath)) {
             if (fbdo.dataType() == "json") {
                 FirebaseJson &json = fbdo.jsonObject();
                 FirebaseJsonData jsonData;
-                Serial.println("Reading contacts from Firebase:");
+                SerialMon.println("Reading contacts from Firebase:");
                 contactCount = 0; // Reset contact count
 
                 // Iterate through the JSON data
@@ -206,7 +195,7 @@ void readFirebase() {
                         contactNames[contactCount - 1] = value;
                     } else if (key == "contact") {
                         // Convert the contact to a string if needed
-                        contactNumbers[contactCount] = "+27" + value.substring(1);
+                        contactNumbers[contactCount] = "+27" + value.substring(0);
                         contactCount++; // Increment contact count
                     }
                 }
@@ -214,18 +203,16 @@ void readFirebase() {
 
                 // Print the names and contacts
                 for (int i = 0; i < contactCount; i++) {
-                    Serial.print("Contact Name: ");
-                    Serial.println(contactNames[i]);
-                    Serial.print("Contact Number: ");
-                    Serial.println(contactNumbers[i]);
+                    SerialMon.print("Contact Name: ");
+                    SerialMon.println(contactNames[i]);
+                    SerialMon.print("Contact Number: ");
+                    SerialMon.println(contactNumbers[i]);
                 }
-                digitalWrite(4, HIGH);
-                delay(1000);
-                digitalWrite(4, LOW);
+               led_doublePress();
             }
         } else {
-            Serial.println("Failed to read from Firebase");
-            Serial.println("Error: " + fbdo.errorReason());
+            SerialMon.println("Failed to read from Firebase");
+            SerialMon.println("Error: " + fbdo.errorReason());
         }
     }
     delay(20000); // Add a delay to prevent spamming the Firebase requests
@@ -283,20 +270,42 @@ void Impact() {
         SerialMon.println(magnitude);
         SerialMon.print("Angle: ");
         SerialMon.println(angle);
-        updateflag = 0; // Reset update flag
-    }
-   // Serial.println(magnitude); 
+        count = 0;
+        if(magnitude > 1000){
+          alarm();
+          if(count > 9){
+            // If button is not pressed, continue with crash detection
+            SerialMon.println("crash detected");
+            SerialMon.println("Calling your next of kin for help");
+
+            // Make a call to the first contact in the list
+            if (contactCount > 0) {
+              Serial.println("Calling first contact: " + contactNumbers[0]);
+              makeCall(contactNumbers[0]);
+              delay(2000);
+            }
+
+            if (contactCount > 1) {
+              Serial.println("Calling second contact: " + contactNumbers[1]);
+              makeCall(contactNumbers[1]);
+            } 
+          }        
+            SerialMon.println("Welcome to Safeguard Alert System");
+        }
+    updateflag = 0; // Reset update flag
+  }
 }
 
 // Connect to Wi-Fi
 void connectWiFi() {
-    Serial.print("Connecting to Wi-Fi");
+    SerialMon.print("Connecting to Wi-Fi");
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
     while (WiFi.status() != WL_CONNECTED) {
-        Serial.print(".");
+        SerialMon.print(".");
         delay(500);
     }
-    Serial.println("Connected to Wi-Fi");
+    SerialMon.println("");
+    SerialMon.println("Connected to Wi-Fi");
 }
 
 // Disconnect from Wi-Fi
@@ -304,4 +313,43 @@ void disconnectWiFi() {
     Serial.println("Disconnecting from Wi-Fi...");
     WiFi.disconnect();
     Serial.println("Disconnected from Wi-Fi");
+}
+
+// Function to make a call using SIM800L
+void makeCall(String number) {
+    Serial1.println("ATD" + number + ";");  // Dial the number
+    delay(15000);  // Let the call last for 10 seconds
+    Serial1.println("ATH");  // Hang up the call
+}
+
+void led_singlePress(){
+  digitalWrite(4, HIGH);
+  delay(100);
+  digitalWrite(4, LOW);
+  delay(100);
+  digitalWrite(4, HIGH);
+  delay(100);
+  digitalWrite(4, LOW);
+}
+
+void led_doublePress(){
+  digitalWrite(4, HIGH);
+  delay(1000);
+  digitalWrite(4, LOW);
+}
+
+void alarm(){
+  for(int i = 0; i < 11; i++){
+    digitalWrite(4, HIGH);
+    delay(500);
+    digitalWrite(4, LOW);
+    delay(500);
+    // Check if false alarm button is pressed
+    if (digitalRead(5) == LOW) {  // Assuming LOW means the button is pressed
+      SerialMon.println("False alarm, exiting crash detection.");
+      return;  // Exit the crash detection logic
+    }
+    count++;
+    SerialMon.println(count);
+  }
 }
