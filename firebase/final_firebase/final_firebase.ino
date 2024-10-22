@@ -58,6 +58,7 @@ void readFirebase();
 void connectWiFi();
 void disconnectWiFi();  // Function to disconnect from Wi-Fi
 void makeCall(String number);
+void sendSMS(String number);
 void led_singlePress();
 void led_doublePress();
 void alarm();
@@ -283,11 +284,27 @@ void Impact() {
               Serial.println("Calling first contact: " + contactNumbers[0]);
               makeCall(contactNumbers[0]);
               delay(2000);
+              Serial.println("Calling second contact: " + contactNumbers[1]);
+              makeCall(contactNumbers[1]);
+              delay(2000);
+
+              Serial.println("Sending SMS to first contact: " + contactNumbers[0]);
+              sendSMS(contactNumbers[0]);
+              delay(2000);
+              Serial.println("Sending SMS to second contact: " + contactNumbers[1]);
+              sendSMS(contactNumbers[1]);
+              delay(1000);
             }
 
             if (contactCount > 1) {
-              Serial.println("Calling second contact: " + contactNumbers[1]);
-              makeCall(contactNumbers[1]);
+            //   Serial.println("");
+            //    delay(1000);
+            //    Serial.println("Calling second contact: " + contactNumbers[1]);
+            //    makeCall(contactNumbers[1]);
+            //    delay(2000);
+              //  Serial.println("Sending SMS to second contact: " + contactNumbers[1]);
+              //  sendSMS(contactNumbers[1]);
+              //  delay(20);
             } 
           }        
             SerialMon.println("Welcome to Safeguard Alert System");
@@ -322,14 +339,26 @@ void makeCall(String number) {
     Serial1.println("ATH");  // Hang up the call
 }
 
+void sendSMS(String number) {
+    Serial1.println("AT+CMGF=1"); // Set SMS to text mode
+    delay(1000);  // Increase delay to allow command processing
+    Serial1.println("AT+CMGS=\"" + number + "\""); // Set the recipient's phone number
+    delay(1000);  // Allow time for the module to prepare for sending
+    Serial1.print("Crash detected! Samkele needs help. Here is his location: https://maps.app.goo.gl/N2D6o9qhjmi7iYKn8");
+    delay(1000); // Allow time for the message content to be processed
+    Serial1.write(26); // Send the SMS (ASCII code 26 is Ctrl+Z)
+    delay(5000); // Give the module time to send the message
+}
+
 void led_singlePress(){
-  digitalWrite(4, HIGH);
-  delay(100);
-  digitalWrite(4, LOW);
-  delay(100);
-  digitalWrite(4, HIGH);
-  delay(100);
-  digitalWrite(4, LOW);
+    digitalWrite(4, HIGH);
+    delay(100);
+    digitalWrite(4, LOW);
+    delay(100);
+    digitalWrite(4, HIGH);
+    delay(100);
+    digitalWrite(4, LOW);
+    delay(100);
 }
 
 void led_doublePress(){
@@ -351,5 +380,19 @@ void alarm(){
     }
     count++;
     SerialMon.println(count);
+  }
+}
+
+void updateSerial() {
+  delay(500);
+
+  // Forward data from Serial Monitor to SIM800L
+  while (SerialMon.available()) {
+    Serial1.write(SerialMon.read());
+  }
+
+  // Forward data from SIM800L to Serial Monitor
+  while (Serial1.available()) {
+    SerialMon.write(Serial1.read());
   }
 }
