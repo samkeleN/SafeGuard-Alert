@@ -272,7 +272,7 @@ void Impact() {
         SerialMon.print("Angle: ");
         SerialMon.println(angle);
         count = 0;
-        if(magnitude > 1000){
+        if(magnitude > 2000){
           alarm();
           if(count > 9){
             // If button is not pressed, continue with crash detection
